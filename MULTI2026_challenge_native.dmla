@@ -1,0 +1,368 @@
+package MULTI2026_Challenge_native
+{    
+    
+    operation void ExtensionTest()
+    {
+        PrintLn("Hello DMLA!");
+    }
+
+    /*******************************************************/
+    //#region Composite Typing
+    /*******************************************************/
+
+    entity ChallengeEntity : Classifier
+    {
+        override operation ValidationError[] Validate(Object subject, Base? context=null)
+        {
+            ValidationError[] result = [];
+            /* Validating bijection requirement 2.2.2 */
+            Base? meta = GetMeta(subject);
+
+            if (subject == this || meta == this)
+            {
+                /* Nothing to check against! */
+                return result;
+            }
+
+            foreach (Base attribute in subject.GetAllSlots())
+            {
+			    if (attribute == Base.Fields || attribute == Base.Operations) continue;
+
+                /* Upward check is enough: will be repeated at every layer below! */
+                if ((GetMeta(attribute) == Base.Fields))
+                {
+                    /* Meta of Base.Fields is Bootstrap.Slot */
+                    add(result, Create(ValidationError, true)
+                        .Set(ValidationError.ValidationSource, this)
+                        .Set(ValidationError.Meta, GetMeta(this))
+                        .Set(ValidationError.Instances, Base[subject])
+                        .Set(ValidationError.Category, "MC/BijectionRequirement")
+                        .Set(ValidationError.ErrorCode, "MC_ChallengeEntity_1")
+                        .Set(ValidationError.Message, "${GetLocalID(attribute)} slot of entity ${GetLocalID(subject)} lacks a valid meta in ${GetLocalID(meta)}")
+                    );
+                }
+            }
+            return result;
+        }
+    }
+    //#endregion
+
+    /*******************************************************/
+    //#region Metamodel according to Figures 3-4.
+    /*******************************************************/
+
+    /*******************************************************
+     * Figure 3-4.: In DMLA the "instance square" pattern is inherent: 
+     * along the metachain we always have a stepwise refinement
+     * allowing a gradual type --> prototype --> instance realization
+     *******************************************************/
+
+    /************************  L0  *************************/
+    entity ConnectorType: ChallengeEntity
+    {
+        @Type = {TypeRef = SlotType;}
+        new slot Slots: Base.Fields;
+    }
+
+    entity SlotType: ChallengeEntity
+    {
+        @Type = {TypeRef = CavityType;}
+        new slot Cavities: Base.Fields;
+    }
+
+    entity CavityType: ChallengeEntity 
+    {
+        @Type = {TypeRef = TerminalType;}
+        new slot Terminals: Base.Fields;
+
+        @Type = {TypeRef = Bool;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot isSealed : Base.Fields;
+    }
+
+    entity TerminalType: ChallengeEntity 
+    {
+        /* Other custom fields */
+    }
+
+    /************************  L1  *************************/
+
+    entity ConnectorPrototype: ConnectorType
+    {
+        @Type = {TypeRef = SlotB_Prototype;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot SlotB_Prototype: Slots;
+    }
+
+    entity SlotB_Prototype: SlotType
+    {
+        @Type = {TypeRef = CavityB_Prototype;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot CavityB_Prototype: Cavities;
+
+        @Type = {TypeRef = CavitySealedB_Prototype;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot CavitySealedB_Prototype: Cavities;
+    }
+
+    entity CavityB_Prototype: CavityType
+    {
+        @DVColor = {Color="Red";}
+        @Final
+        slot isSealed: isSealed = false;
+        
+        @Type = {TypeRef = Int;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot cavityNumber: Base.Fields;
+
+        @Type = {TypeRef = Bool;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot canDetect: Base.Fields;
+
+        @Type = {TypeRef = TerminalPrototype;}
+        slot Terminals;
+    }
+
+    entity CavitySealedB_Prototype: CavityType
+    {
+        @DVColor = {Color="Red";}
+        @Final
+        slot isSealed: isSealed = true;
+
+        @Type = {TypeRef = Int;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot cavityNumber: Base.Fields;
+
+        @Type = {TypeRef = String;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot sealMaterial: Base.Fields;
+
+        @Type = {TypeRef = TerminalPrototype;}
+        slot Terminals;
+    }
+
+    /************************  L2  *************************/
+
+    entity HeaderInstance: ConnectorPrototype
+    {
+        @Type = {TypeRef = SlotA_Instance;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot SlotA_Instance: SlotB_Prototype;
+    }
+
+    entity SlotA_Instance: SlotB_Prototype
+    {
+        @Type = {TypeRef = CavityA_Instance;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot CavityA_Instance: CavityB_Prototype;
+
+        @Type = {TypeRef = CavitySealedA_Instance;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot CavitySealedA_Instance: CavitySealedB_Prototype;
+    }
+
+    entity CavityA_Instance: CavityB_Prototype
+    {
+        @DVColor = {Color="Red";}
+        @Final
+        slot cavityNumber;
+
+        @DVColor = {Color="Red";}
+        @Final
+        slot canDetect;
+    }
+
+    entity CavitySealedA_Instance: CavitySealedB_Prototype
+    {
+        @DVColor = {Color="Red";}
+        @Final
+        slot cavityNumber;
+
+        @DVColor = {Color="Red";}
+        @Final
+        slot sealMaterial;
+    }
+    //#endregion
+
+    /*******************************************************/
+    //#region Instantation according to Figures 5-11.
+    /*******************************************************
+     * Entities constrained by Congruent Typing
+     *******************************************************/
+
+    /* For the sake of consistency with the below examples */
+    entity SlotPrototype: SlotType
+    {
+        @Type = {TypeRef = CavityB_Prototype;}
+        slot Cavities;
+    }
+    entity SlotInstance: SlotPrototype
+    {
+        @Type = {TypeRef = CavityA_Instance;}
+        slot Cavities;
+    }
+    entity TerminalPrototype: TerminalType {}
+    entity TerminalInstance: TerminalPrototype {}
+
+    /* Figure 5.: Congruent owner and parts typing.
+     * cp1 and cp2 are refinements of ct1,
+     * target type/prototype level made explicit by Congruence Constraint */
+    @DVColor = {Color="Blue";}
+    entity ct1: ChallengeEntity
+    {
+        @Type = {TypeRef = SlotType;}
+        @Cardinality = {Min = 1; Max = 1;}
+        new slot st1: Base.Fields;
+
+        @Type = {TypeRef = SlotType;}
+        new slot st2: Base.Fields;
+    }
+
+    entity cp1: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot sp1: st1;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp2: st2;
+    }
+
+    entity cp2: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp3: st1;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp4: st2;
+    }
+
+    entity ct2: ChallengeEntity
+    {
+        @Type = {TypeRef = SlotType;}
+        new slot st3: Base.Fields;
+
+        @Type = {TypeRef = SlotType;}
+        new slot st4: Base.Fields;
+    }
+
+    operation void ValidationTest()
+    {
+        ConnectorPrototype cp2_6t = Create(ConnectorPrototype, false, "cp2_6");
+        PrintEntity(ConnectorPrototype, false, 1);
+        cp2_6t.Set(cp2_6t.Slots,Create(SlotType, false, "st1"));
+        PrintEntity(cp2_6t, false, 1);
+    }
+
+    /* Figure 6: Icongruent typing relationship. First found by:
+     * Built-in refinement validation -- invalid meta specified for slots st3, st4!
+     * As of now tooling relaxes this conflict automatically for executability:
+     * replaces invalid meta with generic Base.Fields */
+    entity cp2_6: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp3: st3;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp4: st4;
+    }
+
+    /* Figure 7: Incongruent part typing relationship. First found by:
+     * Built-in refinement validation -- invalid meta specified for slots st3, st2! */
+    entity cp1_7: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp1: st1;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp2: st3;
+    }
+
+    /* sp3: st2 incongruence also found by missing refinement of st3 being uncompletely resolved:
+     * Missing Type annotation on Base.Fields derived generic slot */
+    entity cp2_7: ct2
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp3: st2;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp4: st4;
+    }
+
+    /* Figure 8: Invalid lack of a part type (sp2: x). First found by:
+     * Domain specific entity validation rule -- sp2 slot of entity lacks a valid meta! */
+    entity cp1_8: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp1: st1;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp2;
+    }
+
+    /* Figure 9: Invalid lack of a part instance (sp2: st2). First found by:
+     * Domain specific entity validation rule -- (unrefined) st2 slot of entity lacks a valid meta! */
+    entity cp1_9: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp1: st1;
+    }
+
+    /* Figure 10: Invalid sharing of a part type. First found by:
+     * Domain specific cardinality constraint -- sp1, sp11 not a valid instance of its meta!
+     * i.e. slot division not allowed. */
+    entity cp1_10: ct1
+    {
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp1: st1;
+
+        @Type = {TypeRef = SlotPrototype;}
+        slot sp2: st1;
+    }
+
+    /* Figure 11: Invalid sharing of a part instance. First found by:
+     * Language syntax check -- "multiple inheritance" not possible.
+     * Comment out for executability! */
+    entity cp1_11: ct1
+    {
+        //@Type = {TypeRef = SlotPrototype;}
+        //new slot sp1: st1, st2;
+    }
+    //#endregion
+
+    /*******************************************************/
+    //#region Additional examples
+    /*******************************************************/
+
+    /* Widening the instaniation example */
+
+    entity st1: ChallengeEntity
+    {
+        @Type = {TypeRef = CavityType;}
+        new slot ct1: Base.Fields;
+    }
+
+    /* Going deeper along the metachain:
+     * Missing features can be detected by the extended entity validation */
+    entity ci1: cp1
+    {
+        @Type = {TypeRef = SlotInstance;}
+        slot si1: sp1;
+
+        /* sp2 refinement missing! */
+    }
+
+    /* Jumping levels:
+     * Valid, if explicitly defined by Congruent Typing */
+    entity ci2 : ct1
+    {
+        @Type = {TypeRef = SlotA_Instance;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot si1: st1;
+
+        @Type = {TypeRef = SlotA_Instance;}
+        @Cardinality = {Min = 1; Max = 1;}
+        slot si2: st2;   
+    }
+    //#endregion
+}
