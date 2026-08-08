@@ -2,15 +2,14 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
 	"name": "DMLA Dev",
-	"image": "dmlateam/aacs26",
+	"image": "dmlateam/multi-vector-industry-challenge-2026",
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"/home/dmlauser/.dmla/extensions/extension.vsix",
-				"jamied.sysml-v2-support"
+				"/home/dmlauser/.dmla/extensions/dmla.vsix"
 			]
 		}
 	},
 	"containerUser": "dmlauser",
 	"remoteUser": "dmlauser"
-}
+}	

@@ -36,8 +36,8 @@ package MULTI2026_Challenge_native
                         .Set(ValidationError.ValidationSource, this)
                         .Set(ValidationError.Meta, GetMeta(this))
                         .Set(ValidationError.Instances, Base[subject])
-                        .Set(ValidationError.Category, "MC/BijectionRequirement")
-                        .Set(ValidationError.ErrorCode, "MC_ChallengeEntity_1")
+                        .Set(ValidationError.Category, "MVIC/BijectionRequirement")
+                        .Set(ValidationError.ErrorCode, "MVIC_ChallengeEntity_1")
                         .Set(ValidationError.Message, "${GetLocalID(attribute)} slot of entity ${GetLocalID(subject)} lacks a valid meta in ${GetLocalID(meta)}")
                     );
                 }

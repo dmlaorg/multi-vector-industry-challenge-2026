@@ -54,8 +54,8 @@ package MULTI2026_Challenge_contracts
                         .Set(ValidationError.ValidationSource, this)
                         .Set(ValidationError.Meta, GetMeta(this))
                         .Set(ValidationError.Instances, Base[subject])
-                        .Set(ValidationError.Category, "MC/BijectionRequirement")
-                        .Set(ValidationError.ErrorCode, "MC_ChallengeEntity_1")
+                        .Set(ValidationError.Category, "MVIC/BijectionRequirement")
+                        .Set(ValidationError.ErrorCode, "MVIC_BijectionRequirement_1")
                         .Set(ValidationError.Message, "${GetLocalID(attribute)} slot of entity ${GetLocalID(subject)} lacks a valid meta in ${GetLocalID(meta)}")
                     );
                 }
@@ -110,12 +110,13 @@ package MULTI2026_Challenge_contracts
                             continue;
                         }
 
-                    	/* Check Constraint Conformity: no need to traverse the meta-chain, 
-                         * as strict refinement in DMLA prohibits relaxation of a constraint! */
+                        /* Check Constraint Conformity: we do not traverse the meta-chain,
+                         * allowing for more flexible congruent typing,
+                         * and anyway - strict refinement in DMLA prohibits relaxation of a constraint! */
                         foreach(Base congruentAnnotation in congruentSlot.GetAllAttributesByMeta(Constraint, false))
                         {
                             if (verbose == true) PrintLn("----congruentAnnotation: ${GetLocalID(congruentAnnotation)}");
-                            Base? slotAnnotation = subjectSlot.GetAttributeByMeta(GetMeta(congruentAnnotation));
+                            Base? slotAnnotation = subjectSlot.GetAttributeByMeta(GetMeta(congruentAnnotation), true);
                             if (slotAnnotation!=null)
                             {
                                 if (verbose == true) PrintLn("-----slotAnnotation: ${GetLocalID(slotAnnotation)}");
@@ -123,8 +124,8 @@ package MULTI2026_Challenge_contracts
 			    				if (count(contractResult)>0) {
 			    					add(slotErrors,	Create(ValidationError, true)
 			    						.Set(ValidationError.ValidationSource, this)
-			    						.Set(ValidationError.Category, "MC/Congruence")
-			    						.Set(ValidationError.ErrorCode, "MC_Congruence_11")
+			    						.Set(ValidationError.Category, "MVIC/Congruence")
+			    						.Set(ValidationError.ErrorCode, "MVIC_Congruence_1a")
 			    						.Set(ValidationError.Message, "Congurence violation: Annotation ${GetLocalID(congruentAnnotation)} on ${GetID(subjectSlot)} failed")
 			    						.SetMany(ValidationError.InnerErrors, contractResult)
 			    						);
@@ -134,8 +135,8 @@ package MULTI2026_Challenge_contracts
 			    			{
 			    				add(slotErrors,	Create(ValidationError, true)
 			    						.Set(ValidationError.ValidationSource, this)
-			    						.Set(ValidationError.Category, "MC/Congruence")
-			    						.Set(ValidationError.ErrorCode, "MC_Congruence_12")
+			    						.Set(ValidationError.Category, "MVIC/Congruence")
+			    						.Set(ValidationError.ErrorCode, "MVIC_Congruence_1b")
 			    						.Set(ValidationError.Message, "Congruence violation: Annotation (${GetID(congruentAnnotation)}: ${GetID(GetMeta(congruentAnnotation))}) on ${GetID(subjectSlot)} is missing.")
 			    					);
 			    			}				
@@ -155,8 +156,8 @@ package MULTI2026_Challenge_contracts
                         foreach (ValidationError error in slotErrors) PrintLn("${getSlotValue(error.GetAttributeByMeta(ValidationError.Message))}", "yellow");
                         add(result,	Create(ValidationError, true)
                             .Set(ValidationError.ValidationSource, this)
-                            .Set(ValidationError.Category, "MC/Congruence")
-                            .Set(ValidationError.ErrorCode, "MC_Congruence_1")
+                            .Set(ValidationError.Category, "MVIC/Congruence")
+                            .Set(ValidationError.ErrorCode, "MVIC_Congruence_1x")
                             .Set(ValidationError.Message, "Congruence error: no matching slot for ${GetLocalID(congruentSlot)} left.")
 			    			.SetMany(ValidationError.InnerErrors, slotErrors)
                             );
@@ -375,7 +376,7 @@ package MULTI2026_Challenge_contracts
 
         @DVColor = {Color="Red";}
         @Final
-        slot sealMaterial;
+        slot sealMaterial = "Gold";
 
         slot TerminalInstances : TerminalPrototypes;
     }
@@ -569,7 +570,7 @@ package MULTI2026_Challenge_contracts
     @HeaderInstanceC
     entity ci2 : ct1
     {
-        //@Type = {TypeRef = SlotA_Instance;}
+        @Type = {TypeRef = SlotA_Instance;}
         @Cardinality = {Min = 1; Max = 1;}
         slot si1: st1;
 
@@ -577,5 +578,13 @@ package MULTI2026_Challenge_contracts
         @Cardinality = {Min = 1; Max = 1;}
         slot si2: st2;   
     }
+
+    /* Feature projected after @Final:
+     * Found by Constraint validation -- attrib sealMaterial is not a valid instance of its meta */
+    entity CavitySealedA_Instance_CopyCat : CavitySealedA_Instance
+    {
+        slot sealMaterial = "Copper";
+    }
+     
     //#endregion
 }
