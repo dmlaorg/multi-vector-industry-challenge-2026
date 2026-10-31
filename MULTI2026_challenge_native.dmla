@@ -58,6 +58,7 @@ package MULTI2026_Challenge_native
      *******************************************************/
 
     /************************  L0  *************************/
+    @DVColor = {Color="Blue";}
     entity ConnectorType: ChallengeEntity
     {
         @Type = {TypeRef = SlotType;}

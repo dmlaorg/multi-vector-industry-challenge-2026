@@ -553,6 +553,22 @@ package MULTI2026_Challenge_contracts
         slot ct1: Cavities;
     }
 
+    @CavitySealedA_InstanceC
+    entity cav1: ChallengeEntity
+    {
+        @Type = {TypeRef = Int;}
+        @Final
+        @DVColor = {Color="Red";}
+        new slot cavnum;
+
+        @Type = {TypeRef = String;}
+        @Final
+        @DVColor = {Color="Red";}
+        new slot mat;
+
+        new slot t1;
+    }
+
     /* Going deeper along the metachain:
      * Missing features can be detected by the Congruence constraint as well */
     @Congruence = {CRef = HeaderInstance;}
