@@ -5,7 +5,7 @@ package MULTI2026_Challenge_contracts
     {
         @Type= { TypeRef = Bool; }
         @Cardinality= {Min= 1; Max=1; }
-        new slot Verbose = false;
+        new slot Verbose = true;
     }
 
     operation void ExtensionTest()
@@ -24,8 +24,10 @@ package MULTI2026_Challenge_contracts
         {
             ValidationError[] result = [];
             /* Validating bijection requirement 2.2.2 */
-            Base? meta = GetMeta(subject);
-            Bool? verbose = true;//this.GetAttributeByMeta(Debug).Get(Debug.Verbose);
+            Base? meta = GetMeta(subject as Base);
+            Base? DebugAnnot = this.GetAttributeByMeta(Debug);
+            Bool verbose = false;
+            if (DebugAnnot != null) verbose = DebugAnnot.Get(Debug.Verbose);
 
             if (subject == this || meta == this)
             {
@@ -33,7 +35,7 @@ package MULTI2026_Challenge_contracts
                 return result;
             }
 
-            if (verbose == true) PrintLn("subject: ${GetLocalID(subject)}");
+            if (verbose == true) _StringTab("subject: ${GetLocalID(subject)}", 0);
             foreach (Base attribute in subject.GetAllSlots())
             {
 			    if (attribute == Base.Fields || attribute == Base.Operations)
@@ -45,10 +47,10 @@ package MULTI2026_Challenge_contracts
                 Base attributeMeta = GetMeta(attribute);
 
                 /* Upward check is enough: will be repeated at every layer below! */
-                if (verbose == true) PrintLn("-attribute: ${GetLocalID(attribute)}");
-                if (contains(metaAttributes, attributeMeta) && (attributeMeta == Base.Fields))
+                if (verbose == true) _StringTab("attribute: ${GetLocalID(attribute)}",1);
+                if (Contains(metaAttributes, attributeMeta) && (attributeMeta == Base.Fields))
                 {
-                    if (verbose == true) PrintLn("--attributeMeta: ${GetLocalID(attributeMeta)}");
+                    if (verbose == true) _StringTab("attributeMeta: ${GetLocalID(attributeMeta)}",2);
                     /* Meta of Base.Fields is Bootstrap.Slot */
                     add(result, Create(ValidationError, true)
                         .Set(ValidationError.ValidationSource, this)
@@ -75,12 +77,14 @@ package MULTI2026_Challenge_contracts
 			ValidationError[] result = [];
             /* This could be an N:1 conformity constraint - CRef can be a list! */
             Object[] congruentList = this.GetAll(Congruence.CRef);
-            Bool? verbose = true;//this.GetAttributeByMeta(Debug).Get(Debug.Verbose);
+            Base? DebugAnnot = this.GetAttributeByMeta(Debug);
+            Bool verbose = false;
+            if (DebugAnnot != null) verbose = DebugAnnot.Get(Debug.Verbose);
 
-            if (verbose == true) PrintLn("appliesOn: ${GetLocalID(appliesOn)}");
+            if (verbose == true) _StringTab("appliesOn: ${GetLocalID(appliesOn)}",0);
             foreach (Object congruentBase in congruentList)
             {
-                if (verbose == true) PrintLn("-congruentBase: ${GetLocalID(congruentBase)}");
+                if (verbose == true) _StringTab("congruentBase: ${GetLocalID(congruentBase)}",1);
 			    Slot[] subjectSlotList = appliesOn.GetAllSlots(false);
 
                 foreach(Slot congruentSlot in congruentBase.GetAllSlots(false))
@@ -89,7 +93,7 @@ package MULTI2026_Challenge_contracts
                     {
                         continue;
                     }
-                    if (verbose == true) PrintLn("--congruentSlot: ${GetLocalID(congruentSlot)}");
+                    if (verbose == true) _StringTab("congruentSlot: ${GetLocalID(congruentSlot)}",2);
 			    	Bool slotFound=false;
 			    	ValidationError?[] slotErrors = [];
 
@@ -100,7 +104,7 @@ package MULTI2026_Challenge_contracts
                         {
                             continue;
                         }
-                        if (verbose == true) PrintLn("---subjectSlot: ${GetLocalID(subjectSlot)}");
+                        if (verbose == true) _StringTab("subjectSlot: ${GetLocalID(subjectSlot)}",3);
                         /* Check Type Conformity: traverse the meta-chain */
                         Base? slotTypeRef = (subjectSlot.GetAttributeByMeta(Type) as Type).GetTypeRef();
                         Base? congruentSlotTypeRef = (congruentSlot.GetAttributeByMeta(Type) as Type).GetTypeRef();
@@ -115,11 +119,11 @@ package MULTI2026_Challenge_contracts
                          * and anyway - strict refinement in DMLA prohibits relaxation of a constraint! */
                         foreach(Base congruentAnnotation in congruentSlot.GetAllAttributesByMeta(Constraint, false))
                         {
-                            if (verbose == true) PrintLn("----congruentAnnotation: ${GetLocalID(congruentAnnotation)}");
+                            if (verbose == true) _StringTab("congruentAnnotation: ${GetLocalID(congruentAnnotation)}",4);
                             Base? slotAnnotation = subjectSlot.GetAttributeByMeta(GetMeta(congruentAnnotation), true);
                             if (slotAnnotation!=null)
                             {
-                                if (verbose == true) PrintLn("-----slotAnnotation: ${GetLocalID(slotAnnotation)}");
+                                if (verbose == true) _StringTab("slotAnnotation: ${GetLocalID(slotAnnotation)}",5);
 			    				ValidationError[] contractResult= congruentAnnotation.Validate(slotAnnotation!!, subjectSlot);
 			    				if (count(contractResult)>0) {
 			    					add(slotErrors,	Create(ValidationError, true)
@@ -146,7 +150,7 @@ package MULTI2026_Challenge_contracts
                         {
                             slotFound = true;
                             /* This simplification is only allowed assuming congruentList elements have no overlapping features! */ 
-                            remove(subjectSlotList, subjectSlot);
+                            Remove(subjectSlotList, subjectSlot);
                             break;
                         }
                     }
